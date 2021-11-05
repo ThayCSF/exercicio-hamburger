@@ -9,24 +9,18 @@ namespace hamburger_exercicio
 {
     class Program
     {
-        private static List<Ingrediente> ingredientes = new List<Ingrediente>();
-        private static List<Pedido> pedidos = new List<Pedido>();
-        private static List<Hamburger> hamburgeres = new List<Hamburger>();
-        private static List<Cliente> clientes = new List<Cliente>();
+        private static List<Cliente> clientes;
+        private static List<Ingrediente> ingredientes;
+        private static List<Hamburger> hamburgeres;
+        private static List<Pedido> pedidos;
         static void Main(string[] args)
         {
-            //carregarClientesDoDiscoEmCsv();
-            carregarClientesDoPostgreSql();
-            carregarIngredientesDoDiscoEmCsv();
-            carregarHamburgeresDoDiscoEmCsv();
-            carregarPedidosDoDiscoEmCsv();
-
-            // carregarClientesDoDiscoEmJson();
-            // carregarIngredientesDoDiscoEmJson();
-            // carregarHamburgeresDoDiscoEmJson();
-            // carregarPedidosDoDiscoEmJson();
-
-            while(true)
+            clientes = ClienteDto.Todos();
+            ingredientes = IngredientesDto.Todos();
+            hamburgeres = HamburgerDto.Todos();
+            pedidos = PedidoDto.Todos();
+            
+            while (true)
             {
                 Console.Clear();
                 Console.WriteLine("Bem vindo ao programa do Hamburger o que você deseja fazer ?");
@@ -70,138 +64,6 @@ namespace hamburger_exercicio
             }
         }
 
-        private static void carregarHamburgeresDoDiscoEmCsv()
-        {
-            string readText = File.ReadAllText("hamburgeres.csv");
-            var linhas = readText.Split('\n');
-            foreach(var linha in linhas)
-            {
-                var colunas = linha.Split(';');
-                if(colunas[0] == "" || colunas[0].ToLower() == "codigo") continue;
-
-                var ingredientesHamburger = new List<Ingrediente>();
-                var codigosIngredientes = colunas[4].Split(',');
-                foreach(var codIngre in codigosIngredientes)
-                {
-                    var ingrediente = ingredientes.Find(ing => ing.Codigo == Convert.ToInt16(codIngre));
-                    ingredientesHamburger.Add(ingrediente);
-                }
-
-                hamburgeres.Add(new Hamburger{
-                    Codigo = Convert.ToInt16(colunas[0]), 
-                    Nome = colunas[1],
-                    Quantidade = Convert.ToInt16(colunas[2]),
-                    Valor = Convert.ToDouble(colunas[3]),
-                    Ingredientes = ingredientesHamburger,
-                });
-            }
-        }
-
-        private static void carregarPedidosDoDiscoEmCsv()
-        {
-            string readText = File.ReadAllText("pedidos.csv");
-            var linhas = readText.Split('\n');
-            foreach(var linha in linhas)
-            {
-                var colunas = linha.Split(';');
-                if(colunas[0] == "" || colunas[0].ToLower() == "codigo") continue;
-
-                var hamburgeresDoPedido = new List<Hamburger>();
-                var codigosHamburgeres = colunas[1].Split(',');
-                foreach(var cod in codigosHamburgeres)
-                {
-                    var codQtd = cod.Split('|');
-                    var ham = hamburgeres.Find(ham => ham.Codigo == Convert.ToInt16(codQtd[0]));
-                    ham.Quantidade = Convert.ToInt16(codQtd[1]);
-                    hamburgeresDoPedido.Add(ham);
-                }
-
-                pedidos.Add(new Pedido{
-                    Codigo = Convert.ToInt16(colunas[0]), 
-                    Itens = hamburgeresDoPedido,
-                    Cliente = clientes.Find(c => c.Codigo == Convert.ToInt16(colunas[2])),
-                });
-            }
-        }
-
-        private static void carregarHamburgeresDoDiscoEmJson()
-        {
-            string readText = File.ReadAllText("hamburgeres.json");
-            hamburgeres = JsonSerializer.Deserialize<List<Hamburger>>(readText);
-        }
-
-        private static void carregarPedidosDoDiscoEmJson()
-        {
-            string readText = File.ReadAllText("pedidos.json");
-            pedidos = JsonSerializer.Deserialize<List<Pedido>>(readText);
-        }
-
-        private static void carregarIngredientesDoDiscoEmCsv()
-        {
-            string readText = File.ReadAllText("ingredientes.csv");
-            var linhas = readText.Split('\n');
-            foreach(var linha in linhas)
-            {
-                var colunas = linha.Split(';');
-                if(colunas[0] == "" || colunas[0].ToLower() == "codigo") continue;
-                ingredientes.Add(new Ingrediente{
-                    Codigo = Convert.ToInt16(colunas[0]), 
-                    Nome = colunas[1]
-                });
-            }
-        }
-
-        private static void carregarClientesDoDiscoEmCsv()
-        {
-            string readText = File.ReadAllText("clientes.csv");
-            var linhas = readText.Split('\n');
-            foreach(var linha in linhas)
-            {
-                var colunas = linha.Split(';');
-                if(colunas[0] == "" || colunas[0].ToLower() == "codigo") continue;
-                clientes.Add(new Cliente{
-                    Codigo = Convert.ToInt16(colunas[0]), 
-                    Nome = colunas[1],
-                    Endereco = colunas[2],
-                    Telefone = colunas[3]
-                });
-            }
-        }
-
-        private static void carregarClientesDoPostgreSql()
-        {
-            string connString ="Server=localhost;Username=danilo;Database=pedido_hamburger;Port=5432;Password=;SSLMode=Prefer";
-            using (var conn = new NpgsqlConnection(connString))
-            {
-                conn.Open();
-                using (var command = new NpgsqlCommand("select * from clientes", conn))
-                {
-                    var dr = command.ExecuteReader();
-                    while(dr.Read())
-                    {
-                        clientes.Add(new Cliente{
-                            Codigo = Convert.ToInt16(dr["codigo"]), 
-                            Nome = dr["nome"].ToString(),
-                            Endereco = dr["endereco"].ToString(),
-                            Telefone = dr["telefone"].ToString()
-                        });
-                    }
-                }
-            }
-        }
-        
-        private static void carregarClientesDoDiscoEmJson()
-        {
-            string readText = File.ReadAllText("clientes.json");
-            clientes = JsonSerializer.Deserialize<List<Cliente>>(readText);
-        }
-
-        private static void carregarIngredientesDoDiscoEmJson()
-        {
-            string readText = File.ReadAllText("ingredientes.json");
-            ingredientes = JsonSerializer.Deserialize<List<Ingrediente>>(readText);
-        }
-
         private static void listarIngredientes()
         {
             Console.Clear();
@@ -214,7 +76,7 @@ namespace hamburger_exercicio
                 Console.WriteLine("----------------------------------");
             }
 
-            Thread.Sleep(10000);
+            Thread.Sleep(5000);
         }
         
         private static void listarClientes()
@@ -229,7 +91,7 @@ namespace hamburger_exercicio
                 Console.WriteLine("----------------------------------");
             }
 
-            Thread.Sleep(10000);
+            Thread.Sleep(5000);
         }
 
         private static void listarHamburgeres()
@@ -250,7 +112,7 @@ namespace hamburger_exercicio
                 Console.WriteLine("----------------------------------");
             }
 
-            Thread.Sleep(10000);
+            Thread.Sleep(5000);
         }
 
         private static void listarPedidos()
@@ -265,7 +127,7 @@ namespace hamburger_exercicio
                 Console.WriteLine($"Escolheu os hamburgeres");
                 foreach(var item in pedido.Itens)
                 {
-                    Console.WriteLine($" - {item.Nome}");
+                    Console.WriteLine($" - {item.Nome} - {item.Quantidade} - R${item.Valor}");
                     foreach(var ingre in item.Ingredientes)
                     {
                         Console.WriteLine($"   - {ingre.Nome}");
@@ -285,13 +147,13 @@ namespace hamburger_exercicio
 
             if(hamburgeres.Count == 0)
             {
-                Console.WriteLine("Nao existe hamburgeres cadastrados");
+                Console.WriteLine("Não existem hamburgueres cadastrados!");
                 Thread.Sleep(3000);
                 return;
             }
 
             var pedido = new Pedido(){ Codigo = (pedidos.Count + 1) ,Cliente = new Cliente(), Itens = new List<Hamburger>()};
-            Console.WriteLine("Digite o nome do cliente");
+            Console.WriteLine("Digite o nome do cliente:");
             pedido.Cliente.Nome = Console.ReadLine();
 
             var cli = clientes.Find(c => c.Nome.ToLower() == pedido.Cliente.Nome.ToLower());
@@ -299,43 +161,41 @@ namespace hamburger_exercicio
                 pedido.Cliente = cli;
             else
             {
-                Console.WriteLine("Digite o endereço do cliente");
+                Console.WriteLine("Digite o endereço do cliente:");
                 pedido.Cliente.Endereco = Console.ReadLine();
 
-                Console.WriteLine("Digite o telefone do cliente");
+                Console.WriteLine("Digite o telefone do cliente:");
                 pedido.Cliente.Telefone = Console.ReadLine();
 
                 pedido.Cliente.Codigo = clientes.Count + 1;
 
                 clientes.Add(pedido.Cliente);
-                salvarClientesCsv(clientes);
-                //salvarClientesJson(clientes);
+                ClienteDto.Salvar(clientes);
             }
 
             selectionaHamburgeres(pedido);
 
             pedidos.Add(pedido);
 
-            // salvarPedidosJson(pedidos);
-            salvarPedidosCsv(pedidos);
+            PedidoDto.Salvar(pedidos);
 
-            Console.WriteLine("Pedido cadastrado com sucesso");
+            Console.WriteLine("Pedido cadastrado com sucesso!");
             Thread.Sleep(1000);
         }
 
         private static void selectionaHamburgeres(Pedido pedido)
         {
-            Console.WriteLine("Seleciona um dos hamburgeres abaixo:");
+            Console.WriteLine("Selecione um dos hamburgeres abaixo:");
             foreach(var hamburger in hamburgeres)
             {
-                Console.WriteLine($"{hamburger.Codigo} - {hamburger.Nome}");
+                Console.WriteLine($"{hamburger.Codigo} - {hamburger.Nome} R$ {hamburger.Valor}");
             }
             int codigo = Convert.ToInt16(Console.ReadLine());
 
             var hamb = hamburgeres.Find(i =>  i.Codigo == codigo);
             if(hamb == null)
             {
-                Console.WriteLine("Código do hamburger inválido");
+                Console.WriteLine("Código do hamburguer inválido!");
                 Thread.Sleep(2000);
                 selectionaHamburgeres(pedido);
                 return;
@@ -346,7 +206,7 @@ namespace hamburger_exercicio
 
             pedido.Itens.Add(hamb);
 
-            Console.WriteLine("Digite 1 para selectionar mais hamburgeres ou 0 para sair");
+            Console.WriteLine("Digite 1 para selectionar mais hamburgueres ou 0 para sair");
             int opcao = Convert.ToInt16(Console.ReadLine());
             if(opcao == 1) selectionaHamburgeres(pedido);
         }
@@ -357,7 +217,7 @@ namespace hamburger_exercicio
 
             if(ingredientes.Count == 0)
             {
-                Console.WriteLine("Nao existe ingredientes cadastrados");
+                Console.WriteLine("Não existem ingredientes cadastrados!");
                 Thread.Sleep(3000);
                 return;
             }
@@ -375,16 +235,15 @@ namespace hamburger_exercicio
 
             hamburgeres.Add(hamburger);
 
-            salvarHamburgeresCsv(hamburgeres);
-            // salvarHamburgeresJson(hamburgeres);
+            HamburgerDto.Salvar(hamburgeres);
 
-            Console.WriteLine("Hamburger cadastrado com sucesso");
+            Console.WriteLine("Hamburguer cadastrado com sucesso!");
             Thread.Sleep(1000);
         }
 
         private static void selectionaIngredientes(Hamburger hamburger)
         {
-            Console.WriteLine("Seleciona um dos ingredientes abaixo:");
+            Console.WriteLine("Selecione um dos ingredientes abaixo:");
             foreach(var ingrediente in ingredientes)
             {
                 Console.WriteLine($"{ingrediente.Codigo} - {ingrediente.Nome}");
@@ -394,7 +253,7 @@ namespace hamburger_exercicio
             var ingre = ingredientes.Find(i =>  i.Codigo == codigo);
             if(ingre == null)
             {
-                Console.WriteLine("Código de ingrediente inválido");
+                Console.WriteLine("Código de ingrediente inválido!");
                 Thread.Sleep(2000);
                 selectionaIngredientes(hamburger);
                 return;
@@ -417,85 +276,10 @@ namespace hamburger_exercicio
             ingrediente.Codigo = ingredientes.Count + 1;
             ingredientes.Add(ingrediente);
 
-            salvarIngredientesCsv(ingredientes);
-            // salvarIngredientesJson(ingredientes);
+            IngredientesDto.Salvar(ingredientes);
 
             Console.WriteLine("Ingrediente cadastrado com sucesso");
             Thread.Sleep(1000);
-        }
-
-        private static void salvarHamburgeresCsv(List<Hamburger> hamburgeres)
-        {
-            string conteudoCsv = "Codigo;Nome;Quantidade;Valor;Ingredientes\n";
-            foreach(var hamburger in hamburgeres)
-            {
-                List<int> codigosIngredientes = new List<int>();
-                foreach(var ingre in hamburger.Ingredientes)
-                {
-                    codigosIngredientes.Add(ingre.Codigo);
-                }
-                conteudoCsv += $"{hamburger.Codigo};{hamburger.Nome};{hamburger.Quantidade};{hamburger.Valor};{string.Join(",", codigosIngredientes.ToArray())}\n";
-            }
-            
-            File.WriteAllText("hamburgeres.csv", conteudoCsv);
-        }
-
-        private static void salvarPedidosCsv(List<Pedido> pedidos)
-        {
-            string conteudoCsv = "Codigo;Itens;CodigoCliente\n";
-            foreach(var pedido in pedidos)
-            {
-                List<string> codigoQtdPedidos = new List<string>();
-                foreach(var ham in pedido.Itens)
-                {
-                    codigoQtdPedidos.Add($"{ham.Codigo}|{ham.Quantidade}");
-                }
-                conteudoCsv += $"{pedido.Codigo};{string.Join(",", codigoQtdPedidos.ToArray())};{pedido.Cliente.Codigo}\n";
-            }
-            
-            File.WriteAllText("pedidos.csv", conteudoCsv);
-        }
-        
-        private static void salvarClientesCsv(List<Cliente> clientes)
-        {
-            string conteudoCsv = "Codigo;Nome;Endereco;Telefone\n";
-            foreach(var cliente in clientes)
-            {
-                conteudoCsv += $"{cliente.Codigo};{cliente.Nome};{cliente.Endereco};{cliente.Telefone}\n";
-            }
-            
-            File.WriteAllText("clientes.csv", conteudoCsv);
-        }
-        
-        private static void salvarHamburgeresJson(List<Hamburger> hamburgeres)
-        {
-            File.WriteAllText("hamburgeres.json", JsonSerializer.Serialize(hamburgeres));
-        }
-
-        private static void salvarIngredientesCsv(List<Ingrediente> ingredientes)
-        {
-            string conteudoCsv = "codigo;nome\n";
-            foreach(var ingrediente in ingredientes)
-            {
-                conteudoCsv += $"{ingrediente.Codigo};{ingrediente.Nome}\n";
-            }
-            
-            File.WriteAllText("ingredientes.csv", conteudoCsv);
-        }
-
-        private static void salvarIngredientesJson(List<Ingrediente> ingredientes)
-        {
-            File.WriteAllText("ingredientes.json", JsonSerializer.Serialize(ingredientes));
-        }
-
-        private static void salvarClientesJson(List<Cliente> clientes)
-        {
-            File.WriteAllText("clientes.json", JsonSerializer.Serialize(clientes));
-        }
-
-        private static void salvarPedidosJson(List<Pedido> pedidos)
-        {
-            File.WriteAllText("pedidos.json", JsonSerializer.Serialize(pedidos));
         }
     }
 }
